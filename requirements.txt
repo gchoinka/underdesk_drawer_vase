@@ -1,0 +1,4 @@
+solidpython2>=2.1.0
+numpy>=1.26.4
+ply>=3.11
+python_version<3.11

@@ -1,0 +1,9 @@
+build/
+.idea/
+__pycache__
+.pyenv
+*.dat
+*.scad
+*.stl
+*.3mf
+*.gcode

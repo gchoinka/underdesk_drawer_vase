@@ -1,0 +1,50 @@
+name: create-scad-and-stl-release
+on:
+  push:
+    # Sequence of patterns matched against refs/tags
+    tags:
+    - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+
+env:
+  PYTHON: python3.12
+
+jobs:
+  build_scad:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup Env
+      shell: bash
+      run: |
+        sudo add-apt-repository ppa:deadsnakes/ppa
+        sudo apt install ${PYTHON} ${PYTHON}-venv snapd -y
+        sudo snap install openscad-nightly
+        ${PYTHON} -m venv .pyenv
+        source .pyenv/bin/activate
+        pip install --upgrade pip
+        pip install -r requirements.txt
+    - name: write scad file and render it to files
+      shell: bash
+      run: |
+        source .pyenv/bin/activate
+        Xvfb :99 & export DISPLAY=:99
+        ${PYTHON} "${{ github.workspace }}/src/*-main.py" --verbose --openscad_bin "/snap/bin/openscad-nightly"
+    - name: Archive production artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: artifacts
+        path: |
+          ${{ github.workspace }}/build/*
+    - name: Tar render output
+      shell: bash
+      run: |
+        cd ${{ github.workspace }}/build
+        tar -cJf all.tar.xz *.scad *.png *.3mf
+    - name: Release
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        files: |
+          build/*.tar.xz
+          build/*.png
+          build/*.3mf
